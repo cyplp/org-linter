@@ -16,6 +16,21 @@ fn is_in_code_block(doc_lines: &[String], line_idx: usize) -> bool {
     in_block
 }
 
+fn compute_code_block_flags(doc_lines: &[String]) -> Vec<bool> {
+    let mut flags = vec![false; doc_lines.len()];
+    let mut in_block = false;
+    for (index, line) in doc_lines.iter().enumerate() {
+        let trimmed = line.trim().to_uppercase();
+        if trimmed.starts_with("#+BEGIN_SRC") || trimmed.starts_with("#+BEGIN_EXAMPLE") {
+            in_block = true;
+        } else if trimmed.starts_with("#+END_SRC") || trimmed.starts_with("#+END_EXAMPLE") {
+            in_block = false;
+        }
+        flags[index] = in_block;
+    }
+    flags
+}
+
 fn url_end(text: &str) -> usize {
     text.find(|ch: char| ch.is_whitespace() || matches!(ch, '"' | '\'' | '>' | '<' | ')' | ',' | ']'))
         .unwrap_or(text.len())
@@ -141,8 +156,11 @@ impl Fixable for BareUrl {
         let client = reqwest::blocking::Client::new();
         let mut cache = std::collections::HashMap::new();
         let mut count = 0;
+
+        let in_code_block: Vec<bool> = compute_code_block_flags(&doc.lines);
+
         for (line_idx, line) in doc.lines.iter_mut().enumerate() {
-            if is_in_code_block(&doc.lines, line_idx) { continue; }
+            if in_code_block.get(line_idx).copied().unwrap_or(false) { continue; }
             if bare_url_ranges(line).is_empty() { continue; }
             let fixed = fix_line(line, &client, timeout, &mut cache);
             if fixed != *line {

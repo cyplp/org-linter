@@ -1,0 +1,17 @@
+[package]
+name = "org-linter"
+version = "0.1.0"
+edition = "2021"
+description = "A markdownlint-style linter for org-mode files"
+
+[[bin]]
+name = "org-linter"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+walkdir = "2"
+reqwest = { version = "0.12", features = ["blocking", "rustls-tls"], default-features = false }
+
+[dev-dependencies]
+tempfile = "3"
